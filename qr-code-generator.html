@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Studio — Generate QR Codes</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --ink: #10171f;
+    --paper: #f6f4ee;
+    --panel: #ffffff;
+    --line: #dcd7c9;
+    --signal: #1d5c4b;
+    --signal-dim: #e7efec;
+    --muted: #6b6459;
+    --danger: #a3372b;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(var(--line) 0.5px, transparent 0.5px);
+    background-size: 18px 18px;
+    opacity: 0.35;
+    z-index: 0;
+  }
+
+  header {
+    position: relative;
+    z-index: 1;
+    padding: 32px 20px 20px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: var(--ink);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 2px;
+    padding: 5px;
+    flex-shrink: 0;
+  }
+  .brand-mark span { background: var(--paper); border-radius: 1px; }
+  .brand-mark span:nth-child(2n) { background: transparent; }
+
+  .brand h1 {
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+
+  .intro {
+    margin-bottom: 24px;
+  }
+  .intro h2 {
+    font-size: 24px;
+    line-height: 1.3;
+    margin: 0 0 6px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .intro p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14.5px;
+    line-height: 1.5;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+
+  .hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 4px 0 0;
+  }
+
+  textarea, input[type="text"] {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 13px;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--ink);
+    background: var(--paper);
+    resize: vertical;
+    min-height: 46px;
+    transition: border-color 0.15s ease;
+  }
+  textarea:focus, input[type="text"]:focus, select:focus {
+    outline: none;
+    border-color: var(--signal);
+    box-shadow: 0 0 0 3px var(--signal-dim);
+  }
+
+  .field { margin-bottom: 18px; }
+  .field:last-child { margin-bottom: 0; }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  select {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 11px 13px;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--ink);
+    background: var(--paper);
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+  }
+
+  .swatch-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 12px;
+    background: var(--paper);
+  }
+  .swatch-group input[type="color"] {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 6px;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+  }
+  .swatch-group span {
+    font-size: 13px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .generate-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    background: var(--signal);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.05s ease;
+  }
+  .generate-btn:hover { background: #164a3c; }
+  .generate-btn:active { transform: scale(0.99); }
+
+  .error {
+    display: none;
+    font-size: 13px;
+    color: var(--danger);
+    margin-top: 10px;
+  }
+  .error.show { display: block; }
+
+  .output {
+    display: none;
+    text-align: center;
+  }
+  .output.show { display: block; }
+
+  .code-frame {
+    display: inline-block;
+    background: #fff;
+    padding: 18px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    margin-bottom: 16px;
+  }
+  #qr-canvas-holder canvas, #qr-canvas-holder img {
+    display: block;
+    border-radius: 4px;
+  }
+
+  .download-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-secondary {
+    padding: 11px 18px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .btn-secondary:hover {
+    border-color: var(--signal);
+    background: var(--signal-dim);
+  }
+
+  .ad-slot {
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    padding: 14px;
+    margin-bottom: 16px;
+    min-height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .about-section {
+    margin-top: 24px;
+  }
+  .about-section h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 8px;
+  }
+  .about-section p {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--muted);
+    margin: 0 0 14px;
+  }
+
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 20px;
+    font-size: 12.5px;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+  }
+
+  @media (max-width: 420px) {
+    .row { grid-template-columns: 1fr; }
+    .intro h2 { font-size: 21px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">
+      <span></span><span></span><span></span>
+      <span></span><span></span><span></span>
+      <span></span><span></span><span></span>
+    </div>
+    <h1>QR Studio</h1>
+  </div>
+</header>
+
+<main>
+  <div class="intro">
+    <h2>Turn any link or text into a scannable code</h2>
+    <p>Paste a URL, message, or contact detail below. Adjust the size and colors, then download it as an image.</p>
+  </div>
+
+  <!-- AdSense slot: top banner. Replace with your ad unit code once approved. -->
+  <!-- BEGIN AADS AD UNIT 2453905 -->
+  <div id="frame" style="width: 100%;margin: auto;position: relative; z-index: 99998;">
+    <iframe data-aa='2453905' src='//acceptable.a-ads.com/2453905/?size=Adaptive'
+      style='border:0; padding:0; width:70%; height:auto; overflow:hidden;display: block;margin: auto'></iframe>
+  </div>
+  <!-- END AADS AD UNIT 2453905 -->
+
+  <div class="panel">
+    <div class="field">
+      <label for="qr-text">Content</label>
+      <textarea id="qr-text" placeholder="https://your-site.com or any text..." rows="2"></textarea>
+      <p class="hint">Works with links, plain text, phone numbers, or Wi-Fi details.</p>
+    </div>
+
+    <div class="field row">
+      <div>
+        <label for="qr-size">Size</label>
+        <select id="qr-size">
+          <option value="200">Small — 200px</option>
+          <option value="300" selected>Medium — 300px</option>
+          <option value="400">Large — 400px</option>
+          <option value="600">Extra large — 600px</option>
+        </select>
+      </div>
+      <div>
+        <label for="qr-correction">Error recovery</label>
+        <select id="qr-correction">
+          <option value="L">Low</option>
+          <option value="M" selected>Medium</option>
+          <option value="Q">Quartile</option>
+          <option value="H">High</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field row">
+      <div>
+        <label for="qr-fg">Code color</label>
+        <div class="swatch-group">
+          <input type="color" id="qr-fg" value="#10171f">
+          <span id="qr-fg-value">#10171F</span>
+        </div>
+      </div>
+      <div>
+        <label for="qr-bg">Background</label>
+        <div class="swatch-group">
+          <input type="color" id="qr-bg" value="#ffffff">
+          <span id="qr-bg-value">#FFFFFF</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <button class="generate-btn" id="generate-btn">Generate QR code</button>
+      <p class="error" id="error-msg">Enter some content before generating a code.</p>
+    </div>
+  </div>
+
+  <div class="panel output" id="output-panel">
+    <div class="code-frame">
+      <div id="qr-canvas-holder"></div>
+    </div>
+    <div class="download-row">
+      <button class="btn-secondary" id="download-png">Download PNG</button>
+      <button class="btn-secondary" id="copy-image">Copy image</button>
+    </div>
+  </div>
+
+  <!-- Add a second A-ADS unit here later if you get another ad zone -->
+  <!-- <div class="ad-slot" id="ad-bottom">Ad space</div> -->
+
+  <div class="about-section">
+    <h3>What is a QR code used for?</h3>
+    <p>A QR code stores a link or piece of text as a pattern that any phone camera can scan. Businesses use them on menus, packaging, and posters to send people straight to a website without typing a URL. Event organizers put them on tickets, and people add them to business cards so contact details can be saved with one scan.</p>
+
+    <h3>How to scan a QR code</h3>
+    <p>Open your phone's camera app and point it at the code — most phones show a link banner automatically, no separate scanner app needed. If nothing appears, check that your camera app supports QR scanning in its settings.</p>
+
+    <h3>Is this QR code generator free?</h3>
+    <p>Yes. Every code is created in your browser and never sent to a server, so there's no limit on how many you can make and nothing is stored after you close the page.</p>
+  </div>
+</main>
+
+<footer>
+  Generated codes are created in your browser — nothing is uploaded or stored.
+</footer>
+
+<script>
+  const textInput = document.getElementById('qr-text');
+  const sizeSelect = document.getElementById('qr-size');
+  const correctionSelect = document.getElementById('qr-correction');
+  const fgInput = document.getElementById('qr-fg');
+  const bgInput = document.getElementById('qr-bg');
+  const fgValue = document.getElementById('qr-fg-value');
+  const bgValue = document.getElementById('qr-bg-value');
+  const generateBtn = document.getElementById('generate-btn');
+  const errorMsg = document.getElementById('error-msg');
+  const outputPanel = document.getElementById('output-panel');
+  const holder = document.getElementById('qr-canvas-holder');
+  const downloadBtn = document.getElementById('download-png');
+  const copyBtn = document.getElementById('copy-image');
+
+  const correctionMap = {
+    L: QRCode.CorrectLevel.L,
+    M: QRCode.CorrectLevel.M,
+    Q: QRCode.CorrectLevel.Q,
+    H: QRCode.CorrectLevel.H
+  };
+
+  fgInput.addEventListener('input', () => {
+    fgValue.textContent = fgInput.value.toUpperCase();
+  });
+  bgInput.addEventListener('input', () => {
+    bgValue.textContent = bgInput.value.toUpperCase();
+  });
+
+  function generateCode() {
+    const content = textInput.value.trim();
+
+    if (!content) {
+      errorMsg.classList.add('show');
+      outputPanel.classList.remove('show');
+      return;
+    }
+    errorMsg.classList.remove('show');
+
+    holder.innerHTML = '';
+
+    const size = parseInt(sizeSelect.value, 10);
+
+    new QRCode(holder, {
+      text: content,
+      width: size,
+      height: size,
+      colorDark: fgInput.value,
+      colorLight: bgInput.value,
+      correctLevel: correctionMap[correctionSelect.value]
+    });
+
+    outputPanel.classList.add('show');
+  }
+
+  generateBtn.addEventListener('click', generateCode);
+
+  textInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      generateCode();
+    }
+  });
+
+  function getCanvas() {
+    return holder.querySelector('canvas');
+  }
+
+  downloadBtn.addEventListener('click', () => {
+    const canvas = getCanvas();
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.download = 'qr-code.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    const canvas = getCanvas();
+    if (!canvas) return;
+    try {
+      canvas.toBlob(async (blob) => {
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob })
+        ]);
+        const original = copyBtn.textContent;
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => { copyBtn.textContent = original; }, 1500);
+      });
+    } catch (err) {
+      copyBtn.textContent = 'Copy not supported';
+      setTimeout(() => { copyBtn.textContent = 'Copy image'; }, 1500);
+    }
+  });
+</script>
+
+</body>
+</html>
